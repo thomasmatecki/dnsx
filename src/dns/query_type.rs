@@ -2,6 +2,7 @@
 pub enum QueryType {
     UNKNOWN(u16),
     A, // 1
+       // TODO: More record types.
 }
 
 impl QueryType {

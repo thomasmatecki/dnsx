@@ -78,6 +78,37 @@ impl BytePacketBuffer {
         Ok(res)
     }
 
+    pub fn write(&mut self, val: u8) -> Result<()> {
+        if self.pos >= 512 {
+            return Err("End of buffer".into());
+        }
+        self.buf[self.pos] = val;
+        self.pos += 1;
+        Ok(())
+    }
+
+    pub fn write_u8(&mut self, val: u8) -> Result<()> {
+        self.write(val)?;
+
+        Ok(())
+    }
+
+    pub fn write_u16(&mut self, val: u16) -> Result<()> {
+        self.write((val >> 8) as u8)?;
+        self.write((val & 0xFF) as u8)?;
+
+        Ok(())
+    }
+
+    pub fn write_u32(&mut self, val: u32) -> Result<()> {
+        self.write(((val >> 24) & 0xFF) as u8)?;
+        self.write(((val >> 16) & 0xFF) as u8)?;
+        self.write(((val >> 8) & 0xFF) as u8)?;
+        self.write(((val >> 0) & 0xFF) as u8)?;
+
+        Ok(())
+    }
+
     /// Read a qname
     ///
     /// The tricky part: Reading domain names, taking labels into consideration.
@@ -87,8 +118,8 @@ impl BytePacketBuffer {
         // Since we might encounter jumps, we'll keep track of our position
         // locally as opposed to using the position within the struct. This
         // allows us to move the shared position to a point past our current
-        // qname, while keeping track of our progress on the current qname
-        // using this variable.
+        // qname, while keeping track of our progress on the current qname using
+        // this variable.
         let mut pos = self.pos();
 
         // track whether or not we've jumped
@@ -163,6 +194,24 @@ impl BytePacketBuffer {
         if !jumped {
             self.seek(pos)?;
         }
+
+        Ok(())
+    }
+
+    pub fn write_qname(&mut self, qname: &str) -> Result<()> {
+        for label in qname.split('.') {
+            let len = label.len();
+            if len > 0x3f {
+                return Err("Single label exceeds 63 characters of length".into());
+            }
+
+            self.write_u8(len as u8)?;
+            for b in label.as_bytes() {
+                self.write_u8(*b)?;
+            }
+        }
+
+        self.write_u8(0)?;
 
         Ok(())
     }

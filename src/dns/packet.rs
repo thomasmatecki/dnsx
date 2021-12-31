@@ -2,12 +2,10 @@ mod header;
 mod question;
 mod record;
 
-use crate::byte_packet_buffer::BytePacketBuffer;
-use crate::dns::query_type::QueryType;
-use crate::Result;
-use header::Header;
-use question::Question;
-use record::Record;
+use crate::{byte_packet_buffer::BytePacketBuffer, dns::query_type::QueryType, Result};
+pub use header::Header;
+pub use question::Question;
+pub use record::Record;
 
 #[derive(Clone, Debug)]
 pub struct Packet {
@@ -53,5 +51,29 @@ impl Packet {
         }
 
         Ok(result)
+    }
+
+    pub fn write(&mut self, buffer: &mut BytePacketBuffer) -> Result<()> {
+        self.header.questions = self.questions.len() as u16;
+        self.header.answers = self.answers.len() as u16;
+        self.header.authoritative_entries = self.authorities.len() as u16;
+        self.header.resource_entries = self.resources.len() as u16;
+
+        self.header.write(buffer)?;
+
+        for question in &self.questions {
+            question.write(buffer)?;
+        }
+        for rec in &self.answers {
+            rec.write(buffer)?;
+        }
+        for rec in &self.authorities {
+            rec.write(buffer)?;
+        }
+        for rec in &self.resources {
+            rec.write(buffer)?;
+        }
+
+        Ok(())
     }
 }
