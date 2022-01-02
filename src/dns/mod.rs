@@ -3,6 +3,8 @@ pub mod query_type;
 pub mod result_code;
 
 pub use packet::Packet;
+pub use query_type::QueryType;
+pub use result_code::ResultCode;
 
 #[cfg(test)]
 mod test {

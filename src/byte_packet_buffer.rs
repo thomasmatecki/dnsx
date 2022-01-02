@@ -1,8 +1,24 @@
 use crate::Result;
+use std::fmt;
 
 pub struct BytePacketBuffer {
     pub buf: [u8; 512],
     pub pos: usize,
+}
+
+impl fmt::Debug for BytePacketBuffer {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let debug_buf = &self
+            .buf
+            .iter()
+            .map(|c| format!("{:x?} ", c))
+            .collect::<String>();
+
+        f.debug_struct("BytePacketBuffer")
+            .field("buf", &debug_buf)
+            .field("pos", &self.pos)
+            .finish()
+    }
 }
 
 impl BytePacketBuffer {
@@ -212,6 +228,19 @@ impl BytePacketBuffer {
         }
 
         self.write_u8(0)?;
+
+        Ok(())
+    }
+
+    pub fn set(&mut self, pos: usize, val: u8) -> Result<()> {
+        self.buf[pos] = val;
+
+        Ok(())
+    }
+
+    pub fn set_u16(&mut self, pos: usize, val: u16) -> Result<()> {
+        self.set(pos, (val >> 8) as u8)?;
+        self.set(pos + 1, (val & 0xFF) as u8)?;
 
         Ok(())
     }
